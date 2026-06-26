@@ -1,0 +1,34 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'theme/app_theme.dart';
+import 'screens/login_screen.dart';
+import 'data/providers/cliente_provider.dart';
+import 'data/providers/notificaciones_provider.dart';
+import 'data/providers/seguridad_provider.dart';
+import 'data/providers/firma_provider.dart';
+
+void main() {
+  runApp(const AssuranceNexusApp());
+}
+
+class AssuranceNexusApp extends StatelessWidget {
+  const AssuranceNexusApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ClienteProvider()),
+        ChangeNotifierProvider(create: (_) => NotificacionesProvider()),
+        ChangeNotifierProvider(create: (_) => SeguridadProvider()),
+        ChangeNotifierProvider(create: (_) => FirmaProvider()),
+      ],
+      child: MaterialApp(
+        title: 'JC Organizadores',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        home: const LoginScreen(),
+      ),
+    );
+  }
+}
