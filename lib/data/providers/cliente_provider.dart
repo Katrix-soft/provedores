@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/cliente.dart';
+import '../services/api_service.dart';
 
 class ClienteProvider extends ChangeNotifier {
   List<Cliente> _todos = mockClientes;
@@ -62,7 +63,10 @@ class ClienteProvider extends ChangeNotifier {
   // Simula actualizar desde el ERP (en el futuro, aquí va la llamada a la API)
   Future<void> recargar() async {
     await Future.delayed(const Duration(milliseconds: 800)); // Simula latencia
-    _todos = mockClientes; // En el futuro: _todos = await apiService.getClientes();
+    // TODO: Usar apiService para obtener datos reales
+    // Ejemplo: final data = await apiService.get('/clientes');
+    // _todos = data.map((json) => Cliente.fromJson(json)).toList();
+    _todos = mockClientes;
     notifyListeners();
   }
 }
