@@ -119,6 +119,7 @@ class ClienteDetalleScreen extends StatelessWidget {
       child: Flex(
         direction: isMobile ? Axis.vertical : Axis.horizontal,
         mainAxisAlignment: isMobile ? MainAxisAlignment.center : MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Avatar con estado
           Stack(
@@ -155,8 +156,18 @@ class ClienteDetalleScreen extends StatelessWidget {
             ],
           ),
           SizedBox(width: isMobile ? 0 : 24, height: isMobile ? 16 : 0),
-          Expanded(
-            child: Column(
+          if (isMobile)
+            _buildProfileInfo(context, isMobile)
+          else
+            Expanded(child: _buildProfileInfo(context, isMobile)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileInfo(BuildContext context, bool isMobile) {
+    final theme = Theme.of(context);
+    return Column(
               crossAxisAlignment: isMobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
               children: [
                 Text(
@@ -192,7 +203,7 @@ class ClienteDetalleScreen extends StatelessWidget {
                     OutlinedButton.icon(
                       onPressed: _email,
                       icon: const Icon(Icons.mail, size: 16),
-                      label: const Text('EMAIL'),
+                      label: const Text('MENSAJE'),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         side: BorderSide(color: Theme.of(context).colorScheme.primary),
@@ -211,11 +222,7 @@ class ClienteDetalleScreen extends StatelessWidget {
                   ],
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
+            );
   }
 
   Widget _buildPoliciesSection(BuildContext context) {

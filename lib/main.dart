@@ -7,6 +7,7 @@ import 'data/providers/cliente_provider.dart';
 import 'data/providers/notificaciones_provider.dart';
 import 'data/providers/seguridad_provider.dart';
 import 'data/providers/firma_provider.dart';
+import 'data/providers/compania_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +26,7 @@ class AssuranceNexusApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => NotificacionesProvider()),
         ChangeNotifierProvider(create: (_) => SeguridadProvider()),
         ChangeNotifierProvider(create: (_) => FirmaProvider()),
+        ChangeNotifierProvider(create: (_) => CompaniaProvider()),
       ],
       child: MaterialApp(
         title: 'JC Organizadores',

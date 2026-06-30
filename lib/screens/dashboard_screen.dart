@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'views/dashboard_home_view.dart';
 import 'views/cobranzas_view.dart';
 import 'views/clientes_view.dart';
+import 'views/companias_view.dart';
 import 'perfil_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -68,6 +69,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         BottomNavigationBarItem(icon: Icon(Icons.analytics), label: 'Métricas'),
         BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'Cobros'),
         BottomNavigationBarItem(icon: Icon(Icons.person_search), label: 'Clientes'),
+        BottomNavigationBarItem(icon: Icon(Icons.business), label: 'Compañías'),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
       ],
     );
@@ -138,7 +140,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _buildDrawerItem(context, Icons.dashboard, 'Dashboard', 0),
           _buildDrawerItem(context, Icons.payments, 'Cobranzas', 1),
           _buildDrawerItem(context, Icons.groups, 'Clientes', 2),
-          _buildDrawerItem(context, Icons.person, 'Perfil', 3),
+          _buildDrawerItem(context, Icons.business, 'Compañías', 3),
+          _buildDrawerItem(context, Icons.person, 'Perfil', 4),
         ],
       ),
     );
@@ -185,7 +188,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         case 0: return 'Métricas de Gestión';
         case 1: return 'Cobranzas';
         case 2: return 'Gestión de Clientes';
-        case 3: return 'Mi Perfil';
+        case 3: return 'Compañías';
+        case 4: return 'Mi Perfil';
         default: return 'Assurance Nexus';
       }
     }
@@ -221,7 +225,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(width: 8),
               GestureDetector(
                 onTap: () {
-                  setState(() => _selectedIndex = 3);
+                  setState(() => _selectedIndex = 4);
                 },
                 child: Container(
                   width: 32,
@@ -252,6 +256,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 2:
         return const ClientesView();
       case 3:
+        return const CompaniasView();
+      case 4:
         return PerfilScreen(username: _username, role: _role, userId: _userId);
       default:
         return DashboardHomeView(username: _username);

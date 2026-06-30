@@ -152,11 +152,11 @@ class PerfilScreen extends StatelessWidget {
                 // Configuración
                 Text('CONFIGURACIÓN', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.outline, letterSpacing: 1.2)),
                 const SizedBox(height: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
+                Material(
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+                    side: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
                   ),
                   child: Column(
                     children: [

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import '../asistente_ia_screen.dart';
+import '../compania_detalle_screen.dart';
+import 'package:provider/provider.dart';
+import '../../data/providers/compania_provider.dart';
 
 class DashboardHomeView extends StatelessWidget {
   final String username;
@@ -88,6 +92,11 @@ class DashboardHomeView extends StatelessWidget {
               ),
             ],
           ),
+
+          const SizedBox(height: 24),
+
+          // Solicitudes Section
+          _buildSolicitudesSection(context),
 
           const SizedBox(height: 24),
 
@@ -291,25 +300,43 @@ class DashboardHomeView extends StatelessWidget {
             style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 24),
-          _buildCompanyTile(context, 'Allianz', '42 pólizas', Icons.business, theme.colorScheme.primary),
-          const SizedBox(height: 8),
-          _buildCompanyTile(context, 'Mapfre', '28 pólizas', Icons.business, const Color(0xFFBA1A1A)), // Error color
-          const SizedBox(height: 8),
-          _buildCompanyTile(context, 'Zurich', '15 pólizas', Icons.business, theme.colorScheme.secondary),
+          ...context.watch<CompaniaProvider>().companias.map((compania) => Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: _buildCompanyTile(
+                  context,
+                  compania.name,
+                  '${compania.totalPolicies} pólizas',
+                  compania.icon,
+                  compania.primaryColor,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CompaniaDetalleScreen(compania: compania),
+                      ),
+                    );
+                  },
+                ),
+              )),
         ],
       ),
     );
   }
 
-  Widget _buildCompanyTile(BuildContext context, String name, String count, IconData icon, Color iconColor) {
+  Widget _buildCompanyTile(BuildContext context, String name, String count, IconData icon, Color iconColor, {VoidCallback? onTap}) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(12.0),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEFF4FF),
+    return Material(
+      color: const Color(0xFFEFF4FF),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
-      ),
+        child: Container(
+          padding: const EdgeInsets.all(12.0),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+          ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -338,6 +365,8 @@ class DashboardHomeView extends StatelessWidget {
           const Icon(Icons.chevron_right, color: Color(0xFF424754)),
         ],
       ),
+    ),
+    ),
     );
   }
 
@@ -417,6 +446,85 @@ class DashboardHomeView extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSolicitudesSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
+
+    return Container(
+      padding: const EdgeInsets.all(24.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Solicitudes',
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          isDesktop
+              ? Row(
+                  children: [
+                    Expanded(child: _buildSolicitudButton(context, 'Cotización/Emisión', onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const AsistenteIAScreen()));
+                    })),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildSolicitudButton(context, 'Endoso/Operativo')),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildSolicitudButton(context, 'Siniestro')),
+                  ],
+                )
+              : Wrap(
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: _buildSolicitudButton(context, 'Cotización/Emisión', onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const AsistenteIAScreen()));
+                      }),
+                    ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: _buildSolicitudButton(context, 'Endoso/Operativo'),
+                    ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: _buildSolicitudButton(context, 'Siniestro'),
+                    ),
+                  ],
+                ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSolicitudButton(BuildContext context, String text, {VoidCallback? onPressed}) {
+    final theme = Theme.of(context);
+    return OutlinedButton(
+      onPressed: onPressed ?? () {},
+      style: OutlinedButton.styleFrom(
+        foregroundColor: theme.colorScheme.primary,
+        side: BorderSide(color: theme.colorScheme.primary),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
     );
   }
 }
