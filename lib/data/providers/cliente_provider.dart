@@ -60,13 +60,19 @@ class ClienteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Simula actualizar desde el ERP (en el futuro, aquí va la llamada a la API)
+  // Simula actualizar desde el ERP o llama a la API real
   Future<void> recargar() async {
-    await Future.delayed(const Duration(milliseconds: 800)); // Simula latencia
-    // TODO: Usar apiService para obtener datos reales
-    // Ejemplo: final data = await apiService.get('/clientes');
-    // _todos = data.map((json) => Cliente.fromJson(json)).toList();
-    _todos = mockClientes;
+    try {
+      final List<dynamic> data = await apiService.get('/clientes/');
+      if (data.isNotEmpty) {
+        _todos = data.map((json) => Cliente.fromJson(json)).toList();
+      } else {
+        _todos = mockClientes; // Fallback si está vacío
+      }
+    } catch (e) {
+      print('Error cargando clientes de la API: $e');
+      _todos = mockClientes; // Fallback en caso de error para que la UI no quede vacía
+    }
     notifyListeners();
   }
 }

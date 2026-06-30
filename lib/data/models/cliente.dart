@@ -66,12 +66,32 @@ class Cliente {
     this.historial = const [],
   });
 
+  factory Cliente.fromJson(Map<String, dynamic> json) {
+    return Cliente(
+      id: json['id']?.toString() ?? '',
+      nombre: json['nombre'] ?? '',
+      dni: json['dni_cuil'] ?? '',
+      telefono: json['telefono'] ?? '',
+      email: json['email'] ?? '',
+      whatsapp: json['telefono'] ?? '', // Usamos telefono si no hay whatsapp
+      estado: EstadoCliente.activo, // TODO: Mapear desde DB
+      ramo: RamoPoliza.automotor, // TODO: Mapear desde DB
+      polizaPrincipal: 'Sin póliza',
+      vencimiento: json['fecha_registro'] ?? '',
+      polizas: [],
+      historial: [],
+    );
+  }
+
   String get iniciales {
     final parts = nombre.trim().split(' ');
     if (parts.length >= 2) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
-    return nombre.substring(0, 2).toUpperCase();
+    if (nombre.length >= 2) {
+      return nombre.substring(0, 2).toUpperCase();
+    }
+    return '';
   }
 
   bool get isPending => estado == EstadoCliente.pendiente;

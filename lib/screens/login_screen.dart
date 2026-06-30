@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../data/services/api_service.dart';
 import 'recovery_screen.dart';
 import 'request_access_screen.dart';
 import 'dashboard_screen.dart';
@@ -143,32 +144,39 @@ class _LoginScreenState extends State<LoginScreen> {
                               if (!mounted) return;
                               setState(() => _isLoading = false);
 
-                              // Cuentas hardcodeadas de acceso
-                              final cuentasValidas = {
-                                'nico@jcorg.com.ar': 'jcorg2024',
-                                'carlos@jcorg.com.ar': 'admin123',
-                              };
-
                               final emailInput = _emailController.text.trim();
                               final passInput = _passwordController.text;
 
-                              if (cuentasValidas.containsKey(emailInput) && cuentasValidas[emailInput] == passInput) {
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute(builder: (_) => const DashboardScreen()),
-                                );
-                              } else {
+                              try {
+                                final exito = await apiService.login(emailInput, passInput);
+                                if (exito) {
+                                  if (!mounted) return;
+                                  Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                                  );
+                                } else {
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: const Color(0xFFBA1A1A),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      content: const Row(
+                                        children: [
+                                          Icon(Icons.error_outline, color: Colors.white),
+                                          SizedBox(width: 8),
+                                          Text('Email/Usuario o contraseña incorrectos', style: TextStyle(color: Colors.white)),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (!mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     backgroundColor: const Color(0xFFBA1A1A),
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    content: const Row(
-                                      children: [
-                                        Icon(Icons.error_outline, color: Colors.white),
-                                        SizedBox(width: 8),
-                                        Text('Email o contraseña incorrectos', style: TextStyle(color: Colors.white)),
-                                      ],
-                                    ),
+                                    content: Text('Error de conexión a la API: $e'),
                                   ),
                                 );
                               }
