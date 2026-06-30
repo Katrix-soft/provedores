@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'views/dashboard_home_view.dart';
 import 'views/cobranzas_view.dart';
 import 'views/clientes_view.dart';
@@ -13,6 +14,24 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
+  String _username = 'Nicolás';
+  String _role = 'agente';
+  int _userId = 28491;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _username = prefs.getString('username') ?? 'Nicolás';
+      _role = prefs.getString('role') ?? 'agente';
+      _userId = prefs.getInt('user_id') ?? 28491;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,21 +112,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Agente Profesional',
+                  _role == 'admin' ? 'Administrador' : 'Agente Profesional',
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: const Color(0xFF006C49), // secondary-fixed like in HTML
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
-                  'Seguros Globales',
+                  _username,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant.withOpacity(0.8),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'ID: 28491',
+                  'ID: $_userId',
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: theme.colorScheme.outlineVariant,
                   ),
@@ -227,15 +246,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _getViewForIndex(int index) {
     switch (index) {
       case 0:
-        return const DashboardHomeView();
+        return DashboardHomeView(username: _username);
       case 1:
         return const CobranzasView();
       case 2:
         return const ClientesView();
       case 3:
-        return const PerfilScreen();
+        return PerfilScreen(username: _username, role: _role, userId: _userId);
       default:
-        return const DashboardHomeView();
+        return DashboardHomeView(username: _username);
     }
   }
 }

@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'notificaciones_screen.dart';
 import 'seguridad_screen.dart';
 import 'firma_screen.dart';
 
 class PerfilScreen extends StatelessWidget {
-  const PerfilScreen({super.key});
+  final String username;
+  final String role;
+  final int userId;
+
+  const PerfilScreen({
+    super.key,
+    required this.username,
+    required this.role,
+    required this.userId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -75,14 +85,14 @@ class PerfilScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Carlos López', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+                            Text(username, style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
                             const SizedBox(height: 4),
                             Row(
                               children: [
                                 const Icon(Icons.verified, color: Color(0xFF0058be), size: 16),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Productor Asesor Senior',
+                                  role == 'admin' ? 'Administrador' : 'Agente Profesional',
                                   style: theme.textTheme.labelMedium?.copyWith(color: const Color(0xFF0058be), fontWeight: FontWeight.bold),
                                 ),
                               ],
@@ -128,9 +138,9 @@ class PerfilScreen extends StatelessWidget {
                         ),
                         child: Text('Datos Personales', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                       ),
-                      _buildDataRow(context, 'ID DE AGENTE', '28491', Icons.badge),
+                       _buildDataRow(context, 'ID DE AGENTE', userId.toString(), Icons.badge),
                       const Divider(height: 1),
-                      _buildDataRow(context, 'EMAIL', 'carlos.lopez@jcorg.com.ar', Icons.mail),
+                      _buildDataRow(context, 'EMAIL / USUARIO', username, Icons.mail),
                       const Divider(height: 1),
                       _buildDataRow(context, 'TELÉFONO', '+54 11 4567-8901', Icons.call),
                     ],
@@ -184,8 +194,12 @@ class PerfilScreen extends StatelessWidget {
 
                 // Logout Button
                 OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                  onPressed: () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.clear();
+                    if (context.mounted) {
+                      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                    }
                   },
                   icon: const Icon(Icons.logout, color: Color(0xFFBA1A1A)),
                   label: const Text('Cerrar Sesión', style: TextStyle(color: Color(0xFFBA1A1A), fontWeight: FontWeight.bold)),

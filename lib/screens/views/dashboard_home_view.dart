@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class DashboardHomeView extends StatelessWidget {
-  const DashboardHomeView({super.key});
+  final String username;
+  const DashboardHomeView({super.key, required this.username});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +17,7 @@ class DashboardHomeView extends StatelessWidget {
         children: [
           const SizedBox(height: 8),
           Text(
-            'Hola, Nicolás',
+            'Hola, $username',
             style: theme.textTheme.headlineMedium,
           ),
           const SizedBox(height: 4),
