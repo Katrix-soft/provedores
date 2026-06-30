@@ -60,19 +60,111 @@ class ClienteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Simula actualizar desde el ERP o llama a la API real
+  // Actualiza desde la API uniendo clientes y pólizas de forma eficiente
   Future<void> recargar() async {
     try {
-      final List<dynamic> data = await apiService.get('/clientes/');
-      if (data.isNotEmpty) {
-        _todos = data.map((json) => Cliente.fromJson(json)).toList();
-      } else {
-        _todos = mockClientes; // Fallback si está vacío
+      final List<dynamic> dataClientes = await apiService.get('/clientes/');
+      
+      List<dynamic> dataPolizas = [];
+      try {
+        dataPolizas = await apiService.get('/polizas/');
+      } catch (e) {
+        print('Error cargando pólizas de la API: $e');
       }
+
+      final polizasMap = <String, List<Poliza>>{};
+      for (var p in dataPolizas) {
+        final cId = p['cliente_id']?.toString() ?? '';
+        polizasMap.putIfAbsent(cId, () => []).add(Poliza.fromJson(p));
+      }
+
+      final List<Cliente> clientesCargados = [];
+      for (var json in dataClientes) {
+        final cId = json['id']?.toString() ?? '';
+        final cPolizas = polizasMap[cId] ?? [];
+        
+        String polPrincipal = 'Sin póliza';
+        RamoPoliza ramoDominante = RamoPoliza.automotor;
+        String vencimiento = json['fecha_registro'] ?? '';
+        EstadoCliente estado = EstadoCliente.activo;
+
+        if (cPolizas.isNotEmpty) {
+          polPrincipal = cPolizas.first.numero;
+          ramoDominante = mapRamoString(cPolizas.first.tipo);
+          vencimiento = cPolizas.first.vencimiento;
+          if (cPolizas.any((p) => p.estado == EstadoCliente.pendiente)) {
+            estado = EstadoCliente.pendiente;
+          }
+        }
+
+        clientesCargados.add(
+          Cliente(
+            id: cId,
+            nombre: json['nombre'] ?? '',
+            dni: json['dni_cuil'] ?? '',
+            telefono: json['telefono'] ?? '',
+            email: json['email'] ?? '',
+            whatsapp: json['telefono'] ?? '',
+            estado: estado,
+            ramo: ramoDominante,
+            polizaPrincipal: polPrincipal,
+            vencimiento: vencimiento,
+            polizas: cPolizas,
+            historial: const [],
+          )
+        );
+      }
+
+      _todos = clientesCargados.isNotEmpty ? clientesCargados : mockClientes;
     } catch (e) {
       print('Error cargando clientes de la API: $e');
       _todos = mockClientes; // Fallback en caso de error para que la UI no quede vacía
     }
     notifyListeners();
   }
+
+  // Método para crear un nuevo cliente en la API
+  Future<bool> crearCliente({
+    required String nombre,
+    required String dniCuil,
+    required String telefono,
+    required String email,
+    String direccion = '',
+    String notas = '',
+  }) async {
+    try {
+      final response = await apiService.post('/clientes/', {
+        'nombre': nombre,
+        'dni_cuil': dniCuil,
+        'telefono': telefono,
+        'email': email,
+        'direccion': direccion,
+        'notas': notas,
+      });
+      if (response != null && response['ok'] == true) {
+        await recargar();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error al crear cliente: $e');
+      return false;
+    }
+  }
+
+  // Método para eliminar un cliente de la API
+  Future<bool> eliminarCliente(String id) async {
+    try {
+      final response = await apiService.delete('/clientes/$id');
+      if (response != null && response['ok'] == true) {
+        await recargar();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error al eliminar cliente: $e');
+      return false;
+    }
+  }
 }
+

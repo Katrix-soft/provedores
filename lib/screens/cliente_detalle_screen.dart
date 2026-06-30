@@ -1,24 +1,103 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../data/models/cliente.dart';
+import '../data/services/api_service.dart';
+import '../data/providers/cliente_provider.dart';
 
-class ClienteDetalleScreen extends StatelessWidget {
+class ClienteDetalleScreen extends StatefulWidget {
   final Cliente cliente;
   const ClienteDetalleScreen({super.key, required this.cliente});
 
+  @override
+  State<ClienteDetalleScreen> createState() => _ClienteDetalleScreenState();
+}
+
+class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
+  late Cliente _cliente;
+  bool _isLoading = false;
+  String _role = 'agente';
+
+  @override
+  void initState() {
+    super.initState();
+    _cliente = widget.cliente;
+    _loadUserRole();
+    _loadClaims();
+  }
+
+  Future<void> _loadUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _role = prefs.getString('role') ?? 'agente';
+      });
+    }
+  }
+
+  Future<void> _loadClaims() async {
+    setState(() => _isLoading = true);
+    try {
+      final List<dynamic> claimsData = await apiService.get('/siniestros/');
+      
+      // Filtrar siniestros que pertenezcan a este cliente o sus pólizas
+      final policyNumbers = _cliente.polizas.map((p) => p.numero.toLowerCase()).toSet();
+      final clientClaims = claimsData.where((c) {
+        final nroPol = (c['nro_poliza'] ?? '').toString().toLowerCase();
+        final cliNombre = (c['cliente_nombre'] ?? '').toString().toLowerCase();
+        return policyNumbers.contains(nroPol) || cliNombre == _cliente.nombre.toLowerCase();
+      }).toList();
+
+      final List<HistorialItem> items = clientClaims.map((c) {
+        final estado = (c['estado'] ?? 'En proceso').toString();
+        final desc = c['descripcion'] ?? 'Sin detalles';
+        final fecha = c['fecha_siniestro'] ?? '';
+        
+        String tipo = 'info';
+        if (estado.toLowerCase() == 'liquidado') {
+          tipo = 'success';
+        } else if (estado.toLowerCase() == 'rechazado') {
+          tipo = 'error';
+        }
+        
+        return HistorialItem(
+          titulo: 'Siniestro: $estado',
+          descripcion: desc,
+          fecha: fecha.toUpperCase(),
+          tipo: tipo,
+        );
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _cliente = _cliente.copyWith(
+            historial: items.isNotEmpty ? items : widget.cliente.historial,
+          );
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error al cargar siniestros: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   Future<void> _llamar() async {
-    final uri = Uri(scheme: 'tel', path: cliente.telefono);
+    final uri = Uri(scheme: 'tel', path: _cliente.telefono);
     if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
   Future<void> _email() async {
-    final uri = Uri(scheme: 'mailto', path: cliente.email);
+    final uri = Uri(scheme: 'mailto', path: _cliente.email);
     if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
   Future<void> _whatsapp() async {
-    final numero = cliente.whatsapp.replaceAll(RegExp(r'[^\d]'), '');
-    final uri = Uri.parse('https://wa.me/$numero?text=Hola%20${Uri.encodeComponent(cliente.nombre)},%20le%20contactamos%20de%20JC%20Organizadores%20Seguros.');
+    final numero = _cliente.whatsapp.replaceAll(RegExp(r'[^\d]'), '');
+    final uri = Uri.parse('https://wa.me/$numero?text=Hola%20${Uri.encodeComponent(_cliente.nombre)},%20le%20contactamos%20de%20JC%20Organizadores%20Seguros.');
     if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
@@ -89,14 +168,47 @@ class ClienteDetalleScreen extends StatelessWidget {
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
-            onSelected: (v) {
+            onSelected: (v) async {
               if (v == 'editar') {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Editar cliente — próximamente')));
+              } else if (v == 'eliminar') {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Eliminar Cliente'),
+                    content: Text('¿Está seguro de que desea eliminar a ${_cliente.nombre}? Esta acción no se puede deshacer.'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('Eliminar', style: TextStyle(color: Color(0xFFBA1A1A))),
+                      ),
+                    ],
+                  ),
+                );
+                
+                if (confirm == true) {
+                  final provider = context.read<ClienteProvider>();
+                  final ok = await provider.eliminarCliente(_cliente.id);
+                  if (mounted) {
+                    if (ok) {
+                      Navigator.pop(context); // Volver a la lista
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Cliente eliminado exitosamente')),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Error al eliminar cliente (permisos insuficientes)')),
+                      );
+                    }
+                  }
+                }
               }
             },
             itemBuilder: (_) => [
               const PopupMenuItem(value: 'editar', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('Editar')])),
-              const PopupMenuItem(value: 'eliminar', child: Row(children: [Icon(Icons.delete, size: 18, color: Color(0xFFBA1A1A)), SizedBox(width: 8), Text('Eliminar', style: TextStyle(color: Color(0xFFBA1A1A)))])),
+              if (_role == 'admin')
+                const PopupMenuItem(value: 'eliminar', child: Row(children: [Icon(Icons.delete, size: 18, color: Color(0xFFBA1A1A)), SizedBox(width: 8), Text('Eliminar', style: TextStyle(color: Color(0xFFBA1A1A)))])),
             ],
           ),
         ],
@@ -133,7 +245,7 @@ class ClienteDetalleScreen extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  cliente.iniciales,
+                  _cliente.iniciales,
                   style: theme.textTheme.headlineLarge?.copyWith(
                     color: theme.colorScheme.onPrimaryContainer,
                     fontWeight: FontWeight.bold,
@@ -147,7 +259,7 @@ class ClienteDetalleScreen extends StatelessWidget {
                   width: 20,
                   height: 20,
                   decoration: BoxDecoration(
-                    color: cliente.isPending ? const Color(0xFFBA1A1A) : const Color(0xFF006C49),
+                    color: _cliente.isPending ? const Color(0xFFBA1A1A) : const Color(0xFF006C49),
                     shape: BoxShape.circle,
                     border: const Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
                   ),
@@ -171,19 +283,19 @@ class ClienteDetalleScreen extends StatelessWidget {
               crossAxisAlignment: isMobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
               children: [
                 Text(
-                  cliente.nombre,
+                  _cliente.nombre,
                   style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                   textAlign: isMobile ? TextAlign.center : TextAlign.left,
                 ),
                 const SizedBox(height: 4),
-                Text('DNI: ${cliente.dni}', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                Text('DNI: ${_cliente.dni}', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: isMobile ? MainAxisAlignment.center : MainAxisAlignment.start,
                   children: [
                     Icon(Icons.mail_outline, size: 14, color: theme.colorScheme.outline),
                     const SizedBox(width: 4),
-                    Text(cliente.email, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    Text(_cliente.email, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -229,7 +341,7 @@ class ClienteDetalleScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final isDesktop = MediaQuery.of(context).size.width >= 768;
 
-    if (cliente.polizas.isEmpty) {
+    if (_cliente.polizas.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
@@ -246,7 +358,7 @@ class ClienteDetalleScreen extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Text('Pólizas Vigentes (${cliente.polizas.length})', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          child: Text('Pólizas Vigentes (${_cliente.polizas.length})', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
         ),
         GridView.count(
           shrinkWrap: true,
@@ -255,7 +367,7 @@ class ClienteDetalleScreen extends StatelessWidget {
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
           childAspectRatio: isDesktop ? 1.6 : 1.4,
-          children: cliente.polizas.map((p) => _buildPolicyCard(context, p)).toList(),
+          children: _cliente.polizas.map((p) => _buildPolicyCard(context, p)).toList(),
         ),
       ],
     );
@@ -412,7 +524,7 @@ class ClienteDetalleScreen extends StatelessWidget {
             border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
             boxShadow: const [BoxShadow(color: Color(0x05000000), blurRadius: 8, offset: Offset(0, 2))],
           ),
-          child: cliente.historial.isEmpty
+          child: _cliente.historial.isEmpty
               ? const Center(child: Padding(padding: EdgeInsets.all(16), child: Text('Sin historial registrado')))
               : Stack(
                   children: [
@@ -424,9 +536,9 @@ class ClienteDetalleScreen extends StatelessWidget {
                     ),
                     Column(
                       children: [
-                        for (int i = 0; i < cliente.historial.length; i++) ...[
-                          _buildTimelineItem(context, cliente.historial[i]),
-                          if (i < cliente.historial.length - 1) const SizedBox(height: 24),
+                        for (int i = 0; i < _cliente.historial.length; i++) ...[
+                          _buildTimelineItem(context, _cliente.historial[i]),
+                          if (i < _cliente.historial.length - 1) const SizedBox(height: 24),
                         ],
                       ],
                     ),
@@ -494,7 +606,7 @@ class ClienteDetalleScreen extends StatelessWidget {
               children: [
                 Container(
                   width: 44, height: 44,
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFD8E2FF)),
+                  decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFD8E2FF)),
                   alignment: Alignment.center,
                   child: Text('AP', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
                 ),

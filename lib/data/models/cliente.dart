@@ -21,6 +21,28 @@ class Poliza {
     this.sumaAsegurada = '',
     required this.estado,
   });
+
+  factory Poliza.fromJson(Map<String, dynamic> json) {
+    final estadoStr = (json['estado'] ?? 'Vigente').toString().toLowerCase();
+    final estadoPago = (json['estado_pago'] ?? 'Al día').toString().toLowerCase();
+    
+    EstadoCliente estado = EstadoCliente.activo;
+    if (estadoStr == 'pendiente' || estadoPago == 'impago' || estadoPago == 'con deuda') {
+      estado = EstadoCliente.pendiente;
+    } else if (estadoStr == 'inactivo' || estadoStr == 'expirada') {
+      estado = EstadoCliente.inactivo;
+    }
+
+    return Poliza(
+      numero: json['nro_poliza'] ?? '',
+      tipo: json['ramo'] ?? 'General',
+      compania: json['compania'] ?? '',
+      vencimiento: json['vigencia_hasta'] ?? '',
+      premio: '\$ ${(json['premio'] ?? 0.0)}',
+      sumaAsegurada: json['prima'] != null ? '\$ ${(json['prima'])}' : '',
+      estado: estado,
+    );
+  }
 }
 
 class HistorialItem {
@@ -66,6 +88,36 @@ class Cliente {
     this.historial = const [],
   });
 
+  Cliente copyWith({
+    String? id,
+    String? nombre,
+    String? dni,
+    String? telefono,
+    String? email,
+    String? whatsapp,
+    EstadoCliente? estado,
+    RamoPoliza? ramo,
+    String? polizaPrincipal,
+    String? vencimiento,
+    List<Poliza>? polizas,
+    List<HistorialItem>? historial,
+  }) {
+    return Cliente(
+      id: id ?? this.id,
+      nombre: nombre ?? this.nombre,
+      dni: dni ?? this.dni,
+      telefono: telefono ?? this.telefono,
+      email: email ?? this.email,
+      whatsapp: whatsapp ?? this.whatsapp,
+      estado: estado ?? this.estado,
+      ramo: ramo ?? this.ramo,
+      polizaPrincipal: polizaPrincipal ?? this.polizaPrincipal,
+      vencimiento: vencimiento ?? this.vencimiento,
+      polizas: polizas ?? this.polizas,
+      historial: historial ?? this.historial,
+    );
+  }
+
   factory Cliente.fromJson(Map<String, dynamic> json) {
     return Cliente(
       id: json['id']?.toString() ?? '',
@@ -73,13 +125,13 @@ class Cliente {
       dni: json['dni_cuil'] ?? '',
       telefono: json['telefono'] ?? '',
       email: json['email'] ?? '',
-      whatsapp: json['telefono'] ?? '', // Usamos telefono si no hay whatsapp
-      estado: EstadoCliente.activo, // TODO: Mapear desde DB
-      ramo: RamoPoliza.automotor, // TODO: Mapear desde DB
+      whatsapp: json['telefono'] ?? '',
+      estado: EstadoCliente.activo,
+      ramo: RamoPoliza.automotor,
       polizaPrincipal: 'Sin póliza',
       vencimiento: json['fecha_registro'] ?? '',
-      polizas: [],
-      historial: [],
+      polizas: const [],
+      historial: const [],
     );
   }
 
@@ -96,6 +148,25 @@ class Cliente {
 
   bool get isPending => estado == EstadoCliente.pendiente;
 }
+
+RamoPoliza mapRamoString(String? ramoStr) {
+  if (ramoStr == null) return RamoPoliza.automotor;
+  switch (ramoStr.toLowerCase()) {
+    case 'vida':
+      return RamoPoliza.vida;
+    case 'hogar':
+      return RamoPoliza.hogar;
+    case 'accidentes':
+    case 'accidentes personales':
+      return RamoPoliza.accidentes;
+    case 'empresas':
+      return RamoPoliza.empresas;
+    case 'automotor':
+    default:
+      return RamoPoliza.automotor;
+  }
+}
+
 
 // Mock data — se reemplaza con datos reales del ERP en el futuro
 final List<Cliente> mockClientes = [

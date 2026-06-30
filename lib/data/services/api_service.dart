@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://api.katrix.com.ar';
+  static final String baseUrl = dotenv.env['API_URL'] ?? 'https://api.katrix.com.ar';
   
   // Obtiene el token guardado
   Future<String?> _getToken() async {
@@ -66,11 +67,35 @@ class ApiService {
     }
   }
 
-  // Ejemplo de petición GET genérica
+  // Petición GET genérica
   Future<dynamic> get(String endpoint) async {
     final url = Uri.parse('$baseUrl$endpoint');
     final headers = await getHeaders();
     final response = await http.get(url, headers: headers);
+    return _handleResponse(response);
+  }
+
+  // Petición POST genérica
+  Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final headers = await getHeaders();
+    final response = await http.post(url, headers: headers, body: json.encode(body));
+    return _handleResponse(response);
+  }
+
+  // Petición PUT genérica
+  Future<dynamic> put(String endpoint, Map<String, dynamic> body) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final headers = await getHeaders();
+    final response = await http.put(url, headers: headers, body: json.encode(body));
+    return _handleResponse(response);
+  }
+
+  // Petición DELETE genérica
+  Future<dynamic> delete(String endpoint) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final headers = await getHeaders();
+    final response = await http.delete(url, headers: headers);
     return _handleResponse(response);
   }
 
@@ -88,3 +113,4 @@ class ApiService {
 }
 
 final apiService = ApiService();
+

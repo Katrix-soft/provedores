@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/cliente.dart';
 import '../../data/providers/cliente_provider.dart';
 import '../cliente_detalle_screen.dart';
@@ -14,6 +15,23 @@ class ClientesView extends StatefulWidget {
 class _ClientesViewState extends State<ClientesView> {
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = false;
+  String _role = 'agente';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _role = prefs.getString('role') ?? 'agente';
+      });
+    }
+  }
+
 
   @override
   void dispose() {
@@ -35,12 +53,14 @@ class _ClientesViewState extends State<ClientesView> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _mostrarAgregarCliente(context),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-        child: const Icon(Icons.person_add),
-      ),
+      floatingActionButton: _role == 'admin'
+          ? FloatingActionButton(
+              onPressed: () => _mostrarAgregarCliente(context),
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              child: const Icon(Icons.person_add),
+            )
+          : null,
       body: RefreshIndicator(
         onRefresh: _recargar,
         child: SingleChildScrollView(
@@ -388,12 +408,17 @@ class _ClientesViewState extends State<ClientesView> {
   }
 
   void _mostrarAgregarCliente(BuildContext context) {
+    final nombreController = TextEditingController();
+    final dniController = TextEditingController();
+    final telefonoController = TextEditingController();
+    final emailController = TextEditingController();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+      builder: (modalContext) => Container(
+        padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(modalContext).viewInsets.bottom + 24),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -405,23 +430,63 @@ class _ClientesViewState extends State<ClientesView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Nuevo Cliente', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                Text('Nuevo Cliente', style: Theme.of(modalContext).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(modalContext)),
               ],
             ),
             const SizedBox(height: 16),
-            const TextField(decoration: InputDecoration(labelText: 'Nombre completo', prefixIcon: Icon(Icons.person))),
+            TextField(
+              controller: nombreController,
+              decoration: const InputDecoration(labelText: 'Nombre completo', prefixIcon: Icon(Icons.person)),
+            ),
             const SizedBox(height: 12),
-            const TextField(decoration: InputDecoration(labelText: 'DNI', prefixIcon: Icon(Icons.badge)), keyboardType: TextInputType.number),
+            TextField(
+              controller: dniController,
+              decoration: const InputDecoration(labelText: 'DNI', prefixIcon: Icon(Icons.badge)),
+              keyboardType: TextInputType.number,
+            ),
             const SizedBox(height: 12),
-            const TextField(decoration: InputDecoration(labelText: 'Teléfono / WhatsApp', prefixIcon: Icon(Icons.phone)), keyboardType: TextInputType.phone),
+            TextField(
+              controller: telefonoController,
+              decoration: const InputDecoration(labelText: 'Teléfono / WhatsApp', prefixIcon: Icon(Icons.phone)),
+              keyboardType: TextInputType.phone,
+            ),
             const SizedBox(height: 12),
-            const TextField(decoration: InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.mail)), keyboardType: TextInputType.emailAddress),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.mail)),
+              keyboardType: TextInputType.emailAddress,
+            ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () async {
+                  if (nombreController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(modalContext).showSnackBar(
+                      const SnackBar(content: Text('Por favor ingrese el nombre')),
+                    );
+                    return;
+                  }
+                  
+                  final ok = await context.read<ClienteProvider>().crearCliente(
+                    nombre: nombreController.text.trim(),
+                    dniCuil: dniController.text.trim(),
+                    telefono: telefonoController.text.trim(),
+                    email: emailController.text.trim(),
+                  );
+                  
+                  if (modalContext.mounted) {
+                    Navigator.pop(modalContext);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(ok
+                            ? 'Cliente guardado exitosamente'
+                            : 'Error al guardar cliente o permisos insuficientes'),
+                      ),
+                    );
+                  }
+                },
                 icon: const Icon(Icons.save),
                 label: const Text('Guardar Cliente'),
               ),
