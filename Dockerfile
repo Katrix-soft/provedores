@@ -29,6 +29,7 @@ COPY . .
 
 # Build the web application
 RUN flutter build web --release
+RUN echo "self.addEventListener('install', (e) => { self.skipWaiting(); }); self.addEventListener('activate', (e) => { self.clients.claim(); });" >> build/web/flutter_service_worker.js
 
 # Stage 2: Serve the app using Nginx
 FROM nginx:alpine
