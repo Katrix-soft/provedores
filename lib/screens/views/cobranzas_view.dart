@@ -92,231 +92,284 @@ class _CobranzasViewState extends State<CobranzasView> {
       backgroundColor: Colors.transparent,
       body: RefreshIndicator(
         onRefresh: _loadCobranzas,
-        child: SingleChildScrollView(
+        child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Breadcrumbs & Header
-              Row(
-                children: [
-                  Text('Cobranzas', style: theme.textTheme.labelMedium),
-                  const Icon(Icons.chevron_right, size: 16),
-                  Text('Falta de Pago', style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
-                  )),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Gestión de Cobranzas',
-                          style: theme.textTheme.headlineMedium,
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // Breadcrumbs & Header
+                  Row(
+                    children: [
+                      Text('Cobranzas', style: theme.textTheme.labelMedium),
+                      const Icon(Icons.chevron_right, size: 16),
+                      Text('Falta de Pago', style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      )),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Gestión de Cobranzas',
+                              style: theme.textTheme.headlineMedium,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Resumen de pagos pendientes y pólizas en riesgo.',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Resumen de pagos pendientes y pólizas en riesgo.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+            
+                  // Bento Summary Metrics
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: isDesktop ? 4 : (isTablet ? 2 : 1),
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: isDesktop ? 1.8 : 2.0,
+                    children: [
+                      _buildMetricCard(
+                        context,
+                        title: 'TOTAL MOROSIDAD',
+                        value: _formatCurrency(_totalMorosidad),
+                        valueColor: const Color(0xFFBA1A1A), // error
+                        subtitle: '$totalImpagos pólizas pendientes de pago hoy.',
+                        accentColor: const Color(0xFFBA1A1A), // error
+                        spanTwo: isDesktop || isTablet,
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFDAD6),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.trending_up, size: 14, color: Color(0xFF93000A)),
+                              SizedBox(width: 4),
+                              Text('+12%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF93000A))),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      _buildMetricCard(
+                        context,
+                        title: 'RECHAZADAS POR DÉBITO',
+                        value: '${_debitoItems.length} Pólizas',
+                        subtitle: 'Pendientes de reintento automático.',
+                        accentColor: theme.colorScheme.primary,
+                      ),
+                      _buildMetricCard(
+                        context,
+                        title: 'DEUDA EN EFECTIVO',
+                        value: '${_efectivoItems.length} Pólizas',
+                        valueColor: theme.colorScheme.secondary,
+                        customSubtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 8),
+                            LinearProgressIndicator(
+                              value: ratioEfectivo,
+                              backgroundColor: const Color(0xFFDCE9FF), // surface-container-high
+                              color: theme.colorScheme.secondary,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ],
+                        ),
+                        accentColor: theme.colorScheme.secondary,
+                      ),
+                    ],
                   ),
-                ],
+                  const SizedBox(height: 32),
+                ]),
               ),
-              
-              const SizedBox(height: 24),
-        
-              // Bento Summary Metrics
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: isDesktop ? 4 : (isTablet ? 2 : 1),
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: isDesktop ? 1.8 : 2.0,
-                children: [
-                  _buildMetricCard(
-                    context,
-                    title: 'TOTAL MOROSIDAD',
-                    value: _formatCurrency(_totalMorosidad),
-                    valueColor: const Color(0xFFBA1A1A), // error
-                    subtitle: '$totalImpagos pólizas pendientes de pago hoy.',
-                    accentColor: const Color(0xFFBA1A1A), // error
-                    spanTwo: isDesktop || isTablet,
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            ),
+
+            // Section: Débito Header
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFDAD6),
+                        color: const Color(0xFFD8E2FF),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.credit_card, color: theme.colorScheme.primary),
+                    ),
+                    const SizedBox(width: 8),
+                    Text('Pendientes Débito Automático', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDCE9FF),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.trending_up, size: 14, color: Color(0xFF93000A)),
-                          SizedBox(width: 4),
-                          Text('+12%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF93000A))),
-                        ],
-                      ),
+                      child: Text('${_debitoItems.length} Casos', style: theme.textTheme.labelMedium),
                     ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Section: Débito List
+            if (_debitoItems.isEmpty)
+              const SliverToBoxAdapter(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Text('No hay rechazos de débito automático registrados.'),
                   ),
-                  _buildMetricCard(
-                    context,
-                    title: 'RECHAZADAS POR DÉBITO',
-                    value: '${_debitoItems.length} Pólizas',
-                    subtitle: 'Pendientes de reintento automático.',
-                    accentColor: theme.colorScheme.primary,
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: isDesktop || isTablet ? 2 : 1,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: isDesktop || isTablet ? 3.5 : 2.5,
                   ),
-                  _buildMetricCard(
-                    context,
-                    title: 'DEUDA EN EFECTIVO',
-                    value: '${_efectivoItems.length} Pólizas',
-                    valueColor: theme.colorScheme.secondary,
-                    customSubtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 8),
-                        LinearProgressIndicator(
-                          value: ratioEfectivo,
-                          backgroundColor: const Color(0xFFDCE9FF), // surface-container-high
-                          color: theme.colorScheme.secondary,
-                          borderRadius: BorderRadius.circular(4),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final item = _debitoItems[index];
+                      final double premio = ((item['premio'] ?? 0.0) as num).toDouble();
+                      return _buildDebitItem(
+                        context,
+                        item['cliente_nombre'] ?? 'Cliente',
+                        'Póliza: ${item['nro_poliza']} | Ramo: ${item['ramo'] ?? 'General'}',
+                        _formatCurrency(premio),
+                        'Rechazo: Sin Fondos',
+                      );
+                    },
+                    childCount: _debitoItems.length,
+                  ),
+                ),
+              ),
+
+            // Section: Efectivo Header
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16.0, 32.0, 16.0, 8.0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6FFBBE), // secondary-fixed
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.payments, color: theme.colorScheme.secondary),
+                    ),
+                    const SizedBox(width: 8),
+                    Text('Cobranza en Efectivo', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDCE9FF),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text('${_efectivoItems.length} Casos', style: theme.textTheme.labelMedium),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Section: Efectivo List
+            if (_efectivoItems.isEmpty)
+              const SliverToBoxAdapter(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Text('No hay cobranzas en efectivo pendientes.'),
+                  ),
+                ),
+              )
+            else if (isDesktop || isTablet)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: DataTable(
+                          columnSpacing: 24,
+                          horizontalMargin: 16,
+                          headingRowColor: WidgetStateProperty.all(const Color(0xFFEFF4FF)), // surface-container-low
+                          columns: const [
+                            DataColumn(label: Text('CLIENTE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF424754)))),
+                            DataColumn(label: Text('ESTADO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF424754)))),
+                            DataColumn(label: Text('MONTO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF424754)))),
+                            DataColumn(label: Text('ACCIÓN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF424754)))),
+                          ],
+                          rows: _efectivoItems.map((item) {
+                            final double premio = ((item['premio'] ?? 0.0) as num).toDouble();
+                            final int dias = ((item['dias_restantes'] ?? 10) as num).toInt();
+                            final bool isUrgent = dias <= 0 || item['urgencia'] == 0;
+                            
+                            return _buildTableRow(
+                              context,
+                              item['cliente_nombre'] ?? 'Cliente',
+                              '${item['ramo'] ?? 'General'} - Póliza ${item['nro_poliza']}',
+                              isUrgent ? 'VENCIDO CON DEUDA' : 'VENCE PRONTO',
+                              isUrgent,
+                              _formatCurrency(premio),
+                            );
+                          }).toList(),
                         ),
-                      ],
-                    ),
-                    accentColor: theme.colorScheme.secondary,
-                  ),
-                ],
-              ),
-        
-              const SizedBox(height: 32),
-        
-              // Section: Débito
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD8E2FF),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.credit_card, color: theme.colorScheme.primary),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('Pendientes Débito Automático', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDCE9FF),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text('${_debitoItems.length} Casos', style: theme.textTheme.labelMedium),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (_debitoItems.isEmpty)
-                const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Text('No hay rechazos de débito automático registrados.')))
-              else
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: isDesktop || isTablet ? 2 : 1,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: isDesktop || isTablet ? 3.5 : 2.5,
-                  children: _debitoItems.map((item) {
-                    final double premio = ((item['premio'] ?? 0.0) as num).toDouble();
-                    return _buildDebitItem(
-                      context,
-                      item['cliente_nombre'] ?? 'Cliente',
-                      'Póliza: ${item['nro_poliza']} | Ramo: ${item['ramo'] ?? 'General'}',
-                      _formatCurrency(premio),
-                      'Rechazo: Sin Fondos',
-                    );
-                  }).toList(),
-                ),
-        
-              const SizedBox(height: 32),
-        
-              // Section: Efectivo
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6FFBBE), // secondary-fixed
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.payments, color: theme.colorScheme.secondary),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('Cobranza en Efectivo', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDCE9FF),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text('${_efectivoItems.length} Casos', style: theme.textTheme.labelMedium),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (_efectivoItems.isEmpty)
-                const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Text('No hay cobranzas en efectivo pendientes.')))
-              else
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        columnSpacing: 24,
-                        horizontalMargin: 16,
-                        headingRowColor: WidgetStateProperty.all(const Color(0xFFEFF4FF)), // surface-container-low
-                        columns: const [
-                          DataColumn(label: Text('CLIENTE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF424754)))),
-                          DataColumn(label: Text('ESTADO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF424754)))),
-                          DataColumn(label: Text('MONTO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF424754)))),
-                          DataColumn(label: Text('ACCIÓN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF424754)))),
-                        ],
-                        rows: _efectivoItems.map((item) {
-                          final double premio = ((item['premio'] ?? 0.0) as num).toDouble();
-                          final int dias = ((item['dias_restantes'] ?? 10) as num).toInt();
-                          final bool isUrgent = dias <= 0 || item['urgencia'] == 0;
-                          
-                          return _buildTableRow(
-                            context,
-                            item['cliente_nombre'] ?? 'Cliente',
-                            '${item['ramo'] ?? 'General'} - Póliza ${item['nro_poliza']}',
-                            isUrgent ? 'VENCIDO CON DEUDA' : 'VENCE PRONTO',
-                            isUrgent,
-                            _formatCurrency(premio),
-                          );
-                        }).toList(),
                       ),
                     ),
                   ),
                 ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: _buildEfectivoMobileCard(context, _efectivoItems[index]),
+                      );
+                    },
+                    childCount: _efectivoItems.length,
+                  ),
+                ),
+              ),
               
               const SizedBox(height: 80), // Space for FAB and Bottom Nav
             ],
@@ -440,6 +493,96 @@ class _CobranzasViewState extends State<CobranzasView> {
               Text(reason, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF727785))),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEfectivoMobileCard(BuildContext context, Map<String, dynamic> item) {
+    final theme = Theme.of(context);
+    final double premio = ((item['premio'] ?? 0.0) as num).toDouble();
+    final int dias = ((item['dias_restantes'] ?? 10) as num).toInt();
+    final bool isUrgent = dias <= 0 || item['urgencia'] == 0;
+    
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  item['cliente_nombre'] ?? 'Cliente',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _formatCurrency(premio),
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFBA1A1A)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  '${item['ramo'] ?? 'General'} - Póliza ${item['nro_poliza']}',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF424754)),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isUrgent ? const Color(0xFFFFDAD6) : const Color(0xFFD3E4FE),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  isUrgent ? 'VENCIDO CON DEUDA' : 'VENCE PRONTO',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: isUrgent ? const Color(0xFF93000A) : const Color(0xFF424754),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: Color(0xFFEFF4FF)),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.call, size: 20),
+                color: theme.colorScheme.primary,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                onPressed: () {},
+              ),
+              const SizedBox(width: 12),
+              IconButton(
+                icon: const Icon(Icons.chat, size: 20),
+                color: theme.colorScheme.secondary,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                onPressed: () {},
+              ),
+            ],
+          )
         ],
       ),
     );
