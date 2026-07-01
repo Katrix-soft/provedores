@@ -48,7 +48,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 _buildTopBar(context),
                 Expanded(
-                  child: _getViewForIndex(_selectedIndex),
+                  child: IndexedStack(
+                    index: _selectedIndex,
+                    children: [
+                      DashboardHomeView(username: _username),
+                      const CobranzasView(),
+                      const ClientesView(),
+                      const CompaniasView(),
+                      PerfilScreen(username: _username, role: _role, userId: _userId),
+                    ],
+                  ),
                 ),
               ],
             ),
