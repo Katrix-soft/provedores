@@ -33,14 +33,56 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
+  <script>
+    if ('serviceWorker' in navigator) {
+      let refreshing = false;
+      
+      // Force page reload when a new service worker takes control
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          console.log('[PWA] Nuevo Service Worker activado. Recargando página...');
+          window.location.reload();
+        }
+      });
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+      const handleRegistration = (reg) => {
+        if (!reg) return;
+
+        // If there's already a waiting worker, skip waiting immediately
+        if (reg.waiting) {
+          console.log('[PWA] Service Worker en espera encontrado. Forzando actualización...');
+          reg.waiting.postMessage('skipWaiting');
+        }
+
+        // Listen for new service worker installation
+        reg.addEventListener('updatefound', () => {
+          const installingWorker = reg.installing;
+          if (installingWorker) {
+            installingWorker.addEventListener('statechange', () => {
+              if (installingWorker.state === 'installed') {
+                console.log('[PWA] Nuevo Service Worker instalado. Forzando activación...');
+                installingWorker.postMessage('skipWaiting');
+              }
+            });
+          }
+        });
+      };
+
+      // Check current registration
+      navigator.serviceWorker.getRegistration().then(handleRegistration);
+
+      // Regularly poll registration in case it is initialized late by flutter_bootstrap.js
+      const interval = setInterval(() => {
+        navigator.serviceWorker.getRegistration().then((reg) => {
+          if (reg) {
+            handleRegistration(reg);
+            clearInterval(interval);
+          }
+        });
+      }, 1000);
+    }
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
