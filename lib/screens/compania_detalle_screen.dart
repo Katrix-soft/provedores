@@ -23,6 +23,10 @@ class CompaniaDetalleScreen extends StatelessWidget {
             height: 1.0,
           ),
         ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: compania.primaryColor),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
           compania.name,
           style: theme.textTheme.headlineSmall?.copyWith(
@@ -219,6 +223,7 @@ class CompaniaDetalleScreen extends StatelessWidget {
           icon: Icons.loop,
           color: const Color(0xFF0058BE), // primary
           bgColor: const Color(0xFF2170E4).withOpacity(0.1), // primary-container approx
+          changeColor: const Color(0xFF006C49), // secondary (green)
         ),
         _buildKPICard(
           context,
@@ -228,6 +233,7 @@ class CompaniaDetalleScreen extends StatelessWidget {
           icon: Icons.trending_up,
           color: const Color(0xFFBA1A1A), // error
           bgColor: const Color(0xFFFFDAD6).withOpacity(0.5), // error-container
+          changeColor: const Color(0xFFBA1A1A), // error (red)
         ),
         _buildKPICard(
           context,
@@ -237,6 +243,7 @@ class CompaniaDetalleScreen extends StatelessWidget {
           icon: Icons.add_business,
           color: const Color(0xFF006C49), // secondary
           bgColor: const Color(0xFF6CF8BB).withOpacity(0.3), // secondary-container approx
+          changeColor: const Color(0xFF006C49), // secondary (green)
         ),
       ],
     );
@@ -250,6 +257,7 @@ class CompaniaDetalleScreen extends StatelessWidget {
     required IconData icon,
     required Color color,
     required Color bgColor,
+    required Color changeColor,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -298,7 +306,7 @@ class CompaniaDetalleScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: color,
+                          color: changeColor,
                         ),
                       ),
                     ],

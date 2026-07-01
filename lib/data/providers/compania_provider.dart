@@ -11,10 +11,10 @@ class CompaniaProvider extends ChangeNotifier {
       icon: Icons.business,
       totalPolicies: 42,
       managedPremium: 3.2, // in millions
-      retentionRate: 94.2,
-      retentionChange: '+2.4% vs last year',
-      lossRatio: 68.5,
-      lossRatioChange: '-1.2% improvement',
+      retentionRate: 92.0,
+      retentionChange: '+2.4%',
+      lossRatio: 45.0,
+      lossRatioChange: '-5.1%',
       newBusiness: 8,
       newBusinessChange: 'Target Met',
       branches: [
@@ -29,9 +29,9 @@ class CompaniaProvider extends ChangeNotifier {
         Renovacion(clientName: 'Carlos D\'Amico', policyNumber: 'Pol: 0092-110022', dateString: '18 JUN', bgColor: Color(0xFF6CF8BB), textColor: Color(0xFF00714D)),
         Renovacion(clientName: 'Inmobiliaria Central', policyNumber: 'Pol: 0092-557612', dateString: '20 JUN', bgColor: Color(0xFF6CF8BB), textColor: Color(0xFF00714D)),
       ],
-      annualGrowth: '+15.4%',
-      pendingCommissions: '\$145,000',
-      openClaims: '12 Activos',
+      annualGrowth: '+12.5%',
+      pendingCommissions: '\$124.500',
+      openClaims: '4',
     ),
     const Compania(
       id: '2',
