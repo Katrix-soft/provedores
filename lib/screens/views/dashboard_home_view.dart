@@ -119,25 +119,22 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
             ),
             const SizedBox(height: 24),
       
-            // Metrics Grid
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: isDesktop ? 4 : (isTablet ? 2 : 1),
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: isDesktop ? 1.5 : (isTablet ? 1.5 : 2.0),
-              children: [
-                _buildMetricCard(
+            // Metrics Layout (Responsive)
+            Builder(
+              builder: (context) {
+                final double premioTotal = (_metrics['premio_total'] as num?)?.toDouble() ?? 13500000.0;
+                final int clientesTotales = (_metrics['clientes_totales'] as num?)?.toInt() ?? 8;
+
+                final Widget cardPremio = _buildMetricCard(
                   context,
                   title: 'Premio Administrado',
                   value: _formatCurrency(premioTotal),
                   subtitle: 'Cartera Total Vigente',
                   icon: Icons.account_balance_wallet,
                   accentColor: theme.colorScheme.primary,
-                  spanTwo: isDesktop || isTablet,
-                ),
-                _buildMetricCard(
+                );
+
+                final Widget cardClientes = _buildMetricCard(
                   context,
                   title: 'Clientes Activos',
                   value: '$clientesTotales',
@@ -164,8 +161,9 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                     ],
                   ),
                   accentColor: theme.colorScheme.primary,
-                ),
-                _buildMetricCard(
+                );
+
+                final Widget cardDeuda = _buildMetricCard(
                   context,
                   title: 'Pólizas con Deuda',
                   value: '$_polizasConDeuda',
@@ -181,8 +179,65 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                     ],
                   ),
                   accentColor: const Color(0xFFBA1A1A),
-                ),
-              ],
+                );
+
+                if (isDesktop) {
+                  return IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: cardPremio,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 1,
+                          child: cardClientes,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 1,
+                          child: cardDeuda,
+                        ),
+                      ],
+                    ),
+                  );
+                } else if (isTablet) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      cardPremio,
+                      const SizedBox(height: 16),
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: cardClientes,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: cardDeuda,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                } else {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      cardPremio,
+                      const SizedBox(height: 16),
+                      cardClientes,
+                      const SizedBox(height: 16),
+                      cardDeuda,
+                    ],
+                  );
+                }
+              },
             ),
 
             const SizedBox(height: 24),
@@ -536,6 +591,33 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                 ),
               );
             }).toList(),
+          if (_renewals.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Abriendo calendario completo de renovaciones...'),
+                    ),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: theme.colorScheme.primary,
+                  side: BorderSide(color: theme.colorScheme.primary),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Ver Calendario Completo',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -612,7 +694,7 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
               ? Row(
                   children: [
                     Expanded(child: _buildSolicitudButton(context, 'Cotización/Emisión', onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const AsistenteIAScreen()));
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => AsistenteIAScreen(username: widget.username)));
                     })),
                     const SizedBox(width: 8),
                     Expanded(child: _buildSolicitudButton(context, 'Endoso/Operativo')),
@@ -627,7 +709,7 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                     SizedBox(
                       width: double.infinity,
                       child: _buildSolicitudButton(context, 'Cotización/Emisión', onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const AsistenteIAScreen()));
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => AsistenteIAScreen(username: widget.username)));
                       }),
                     ),
                     SizedBox(

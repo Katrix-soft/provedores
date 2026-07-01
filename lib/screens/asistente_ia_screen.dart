@@ -15,7 +15,8 @@ class ChatMessage {
 }
 
 class AsistenteIAScreen extends StatefulWidget {
-  const AsistenteIAScreen({super.key});
+  final String? username;
+  const AsistenteIAScreen({super.key, this.username});
 
   @override
   State<AsistenteIAScreen> createState() => _AsistenteIAScreenState();
@@ -30,8 +31,9 @@ class _AsistenteIAScreenState extends State<AsistenteIAScreen> {
   @override
   void initState() {
     super.initState();
+    final name = widget.username ?? 'Carlos';
     _messages.add(ChatMessage(
-      text: 'Hola, **Carlos**. ¡Es un gusto saludarte hoy!\n\n¿En qué puedo asistirte con tu cartera de clientes? Puedo ayudarte a cotizar, consultar siniestros o revisar pólizas vigentes.',
+      text: 'Hola, **$name**. ¡Es un gusto saludarte hoy!\n\n¿En qué puedo asistirte con tu cartera de clientes? Puedo ayudarte a cotizar, consultar siniestros o revisar pólizas vigentes.',
       isUser: false,
     ));
     _messages.add(ChatMessage(

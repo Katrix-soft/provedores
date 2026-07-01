@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../data/services/api_service.dart';
-import 'recovery_screen.dart';
-import 'request_access_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,18 +10,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
   bool _isLoading = false;
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,9 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
-              child: Form(
-                key: _formKey,
-                child: Column(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Logo Section
@@ -67,12 +52,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(24.0),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surface, // surface-container-lowest equivalent
+                      color: theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(12.0),
                       border: Border.all(color: theme.colorScheme.outlineVariant),
                       boxShadow: const [
                         BoxShadow(
-                          color: Color(0x0D000000), // 0.05 opacity
+                          color: Color(0x0D000000),
                           blurRadius: 12,
                           offset: Offset(0, 4),
                         ),
@@ -81,102 +66,33 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Email Field
-                        Text(
-                          'EMAIL',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'Ingresá tu email';
-                            if (!v.contains('@')) return 'Email inválido';
-                            return null;
-                          },
-                          decoration: const InputDecoration(
-                            hintText: 'Ejemplo@gmail.com',
-                            prefixIcon: Icon(Icons.mail_outline),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        
-                        // Password Field
-                        Text(
-                          'CONTRASEÑA',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'Ingresá tu contraseña';
-                            if (v.length < 6) return 'Mínimo 6 caracteres';
-                            return null;
-                          },
-                          decoration: InputDecoration(
-                            hintText: '••••••••',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        
                         // Action Button
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : () async {
-                              if (!_formKey.currentState!.validate()) return;
                               setState(() => _isLoading = true);
                               await Future.delayed(const Duration(milliseconds: 800));
                               if (!mounted) return;
                               setState(() => _isLoading = false);
 
-                              final emailInput = _emailController.text.trim();
-                              final passInput = _passwordController.text;
-
                               try {
-                                final exito = await apiService.login(emailInput, passInput);
-                                if (exito) {
-                                  if (!mounted) return;
-                                  Navigator.of(context).pushReplacement(
-                                    MaterialPageRoute(builder: (_) => const DashboardScreen()),
-                                  );
-                                } else {
-                                  if (!mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      backgroundColor: const Color(0xFFBA1A1A),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      content: const Row(
-                                        children: [
-                                          Icon(Icons.error_outline, color: Colors.white),
-                                          SizedBox(width: 8),
-                                          Text('Email/Usuario o contraseña incorrectos', style: TextStyle(color: Colors.white)),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                }
+                                final prefs = await SharedPreferences.getInstance();
+                                await prefs.setString('access_token', 'mock_token');
+                                await prefs.setString('username', 'Nicolás');
+                                await prefs.setString('role', 'admin');
+                                await prefs.setInt('user_id', 28491);
+
+                                if (!mounted) return;
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                                );
                               } catch (e) {
                                 if (!mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     backgroundColor: const Color(0xFFBA1A1A),
-                                    content: Text('Error de conexión a la API: $e'),
+                                    content: Text('Error al inicializar sesión: $e'),
                                   ),
                                 );
                               }
@@ -193,56 +109,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        
-                        // Links
-                        const Divider(),
-                        const SizedBox(height: 24),
-                        Center(
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const RecoveryScreen(),
-                                ),
-                              );
-                            },
-                            child: Text(
-                              '¿Olvidaste tu contraseña?',
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: theme.colorScheme.primary,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '¿No tienes cuenta?',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => const RequestAccessScreen(),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                'Solicitar acceso',
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  color: theme.colorScheme.secondary,
-                                  fontWeight: FontWeight.bold,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),
@@ -250,19 +116,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 32),
                   // Footer
                   Text(
-                    '© 2026 JC Organizadores. Sistema de Gestión Profesional.',
+                    'Powered by Katrix © 2026',
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.outline,
                     ),
                     textAlign: TextAlign.center,
                   ),
                 ],
-              ),       // Column
-            ),         // Form
-          ),           // ConstrainedBox
-        ),             // SingleChildScrollView
-      ),               // Center
-    ),                 // SafeArea
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

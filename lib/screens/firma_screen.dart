@@ -21,6 +21,8 @@ class _FirmaScreenState extends State<FirmaScreen> {
     if (!_initialized) {
       final provider = context.read<FirmaProvider>();
       _titleController = TextEditingController(text: provider.titulo);
+      // Realizar una copia profunda de los trazos existentes para poder visualizarlos y editarlos
+      _tempStrokes = provider.strokes.map((stroke) => List<Offset>.from(stroke)).toList();
       _initialized = true;
     }
   }
@@ -75,7 +77,7 @@ class _FirmaScreenState extends State<FirmaScreen> {
     if (!mounted) return;
     setState(() {
       _isSaving = false;
-      _tempStrokes.clear();
+      // No limpiamos _tempStrokes para que la firma siga visible en el editor interactivo
     });
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -188,7 +190,7 @@ class _FirmaScreenState extends State<FirmaScreen> {
                               )
                             : ClipRect(
                                 child: CustomPaint(
-                                  painter: _SignaturePainter(provider.strokes, theme.colorScheme.primary),
+                                  painter: _SignaturePainter(provider.strokes, theme.colorScheme.primary, scaleToFit: true),
                                 ),
                               ),
                       ),
@@ -336,11 +338,14 @@ class _FirmaScreenState extends State<FirmaScreen> {
 class _SignaturePainter extends CustomPainter {
   final List<List<Offset>> strokes;
   final Color color;
+  final bool scaleToFit;
 
-  _SignaturePainter(this.strokes, this.color);
+  _SignaturePainter(this.strokes, this.color, {this.scaleToFit = false});
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (strokes.isEmpty) return;
+
     final paint = Paint()
       ..color = color
       ..strokeCap = StrokeCap.round
@@ -348,6 +353,65 @@ class _SignaturePainter extends CustomPainter {
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke;
 
+    if (scaleToFit) {
+      // Calcular la caja contenedora de los trazos
+      double minX = double.infinity;
+      double maxX = -double.infinity;
+      double minY = double.infinity;
+      double maxY = -double.infinity;
+      bool hasPoints = false;
+
+      for (var stroke in strokes) {
+        for (var point in stroke) {
+          hasPoints = true;
+          if (point.dx < minX) minX = point.dx;
+          if (point.dx > maxX) maxX = point.dx;
+          if (point.dy < minY) minY = point.dy;
+          if (point.dy > maxY) maxY = point.dy;
+        }
+      }
+
+      if (hasPoints && minX < maxX && minY < maxY) {
+        double sigWidth = maxX - minX;
+        double sigHeight = maxY - minY;
+
+        double padding = 16.0;
+        double fitWidth = size.width - padding * 2;
+        double fitHeight = size.height - padding * 2;
+
+        double scaleX = fitWidth / sigWidth;
+        double scaleY = fitHeight / sigHeight;
+        double scale = scaleX < scaleY ? scaleX : scaleY;
+
+        // Limitar la escala máxima para evitar agrandar firmas minúsculas en exceso
+        if (scale > 2.0) scale = 2.0;
+
+        double translateX = (size.width - sigWidth * scale) / 2 - minX * scale;
+        double translateY = (size.height - sigHeight * scale) / 2 - minY * scale;
+
+        canvas.save();
+        canvas.translate(translateX, translateY);
+        canvas.scale(scale);
+
+        // Ajustar el grosor del pincel según la escala para mantener la consistencia visual
+        paint.strokeWidth = 2.5 / scale;
+
+        for (var stroke in strokes) {
+          if (stroke.isEmpty) continue;
+          final path = Path();
+          path.moveTo(stroke.first.dx, stroke.first.dy);
+          for (int i = 1; i < stroke.length; i++) {
+            path.lineTo(stroke[i].dx, stroke[i].dy);
+          }
+          canvas.drawPath(path, paint);
+        }
+
+        canvas.restore();
+        return;
+      }
+    }
+
+    // Dibujado estándar a escala 1:1 para el editor interactivo
     for (var stroke in strokes) {
       if (stroke.isEmpty) continue;
       
@@ -364,6 +428,6 @@ class _SignaturePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SignaturePainter oldDelegate) {
-    return true; // We want to repaint when strokes change
+    return oldDelegate.strokes != strokes || oldDelegate.color != color || oldDelegate.scaleToFit != scaleToFit;
   }
 }
