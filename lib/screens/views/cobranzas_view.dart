@@ -370,10 +370,10 @@ class _CobranzasViewState extends State<CobranzasView> {
                   ),
                 ),
               ),
-              
-              const SizedBox(height: 80), // Space for FAB and Bottom Nav
-            ],
-          ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 80),
+            ),
+          ],
         ),
       ),
     );
