@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../data/services/api_service.dart';
 import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -73,23 +74,31 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : () async {
                               setState(() => _isLoading = true);
-                              await Future.delayed(const Duration(milliseconds: 800));
+                              await Future.delayed(const Duration(milliseconds: 400));
                               if (!mounted) return;
-                              setState(() => _isLoading = false);
 
                               try {
-                                final prefs = await SharedPreferences.getInstance();
-                                await prefs.setString('access_token', 'mock_token');
-                                await prefs.setString('username', 'Nicolás');
-                                await prefs.setString('role', 'admin');
-                                await prefs.setInt('user_id', 28491);
+                                try {
+                                  // Realizar login automático con el usuario broker por defecto para el bypass
+                                  await apiService.login('broker', 'password123');
+                                } catch (e) {
+                                  print('Error en login real (usando fallback offline): $e');
+                                  // Fallback offline en caso de que no haya conexión al servidor
+                                  final prefs = await SharedPreferences.getInstance();
+                                  await prefs.setString('access_token', 'mock_token');
+                                  await prefs.setString('username', 'broker');
+                                  await prefs.setString('role', 'admin');
+                                  await prefs.setInt('user_id', 28491);
+                                }
 
                                 if (!mounted) return;
+                                setState(() => _isLoading = false);
                                 Navigator.of(context).pushReplacement(
                                   MaterialPageRoute(builder: (_) => const DashboardScreen()),
                                 );
                               } catch (e) {
                                 if (!mounted) return;
+                                setState(() => _isLoading = false);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     backgroundColor: const Color(0xFFBA1A1A),
