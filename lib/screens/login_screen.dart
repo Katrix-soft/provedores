@@ -250,7 +250,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 32),
                   // Footer
                   Text(
-                    '© 2024 JC Organizadores. Sistema de Gestión Profesional.',
+                    '© 2026 JC Organizadores. Sistema de Gestión Profesional.',
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.outline,
                     ),
