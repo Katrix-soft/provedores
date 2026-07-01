@@ -97,7 +97,6 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
     final double premioTotal = (_metrics['premio_total'] as num?)?.toDouble() ?? 13500000.0;
     final int clientesTotales = (_metrics['clientes_totales'] as num?)?.toInt() ?? 8;
     final List<dynamic> ramosDist = _metrics['ramos_distribucion'] as List<dynamic>? ?? [];
-    final List<dynamic> companiasDist = _metrics['companias_distribucion'] as List<dynamic>? ?? [];
 
     return RefreshIndicator(
       onRefresh: _loadDashboardData,
@@ -122,9 +121,6 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
             // Metrics Layout (Responsive)
             Builder(
               builder: (context) {
-                final double premioTotal = (_metrics['premio_total'] as num?)?.toDouble() ?? 13500000.0;
-                final int clientesTotales = (_metrics['clientes_totales'] as num?)?.toInt() ?? 8;
-
                 final Widget cardPremio = _buildMetricCard(
                   context,
                   title: 'Premio Administrado',
@@ -479,24 +475,30 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
             style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 24),
-          ...context.watch<CompaniaProvider>().companias.map((compania) => Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: _buildCompanyTile(
-                  context,
-                  compania.name,
-                  '${compania.totalPolicies} pólizas',
-                  compania.icon,
-                  compania.primaryColor,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CompaniaDetalleScreen(compania: compania),
-                      ),
-                    );
-                  },
-                ),
-              )),
+          Consumer<CompaniaProvider>(
+            builder: (context, provider, child) {
+              return Column(
+                children: provider.companias.map((compania) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: _buildCompanyTile(
+                    context,
+                    compania.name,
+                    '${compania.totalPolicies} pólizas',
+                    compania.icon,
+                    compania.primaryColor,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CompaniaDetalleScreen(compania: compania),
+                        ),
+                      );
+                    },
+                  ),
+                )).toList(),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -697,9 +699,13 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => AsistenteIAScreen(username: widget.username)));
                     })),
                     const SizedBox(width: 8),
-                    Expanded(child: _buildSolicitudButton(context, 'Endoso/Operativo')),
+                    Expanded(child: _buildSolicitudButton(context, 'Endoso/Operativo', onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => AsistenteIAScreen(username: widget.username)));
+                    })),
                     const SizedBox(width: 8),
-                    Expanded(child: _buildSolicitudButton(context, 'Siniestro')),
+                    Expanded(child: _buildSolicitudButton(context, 'Siniestro', onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => AsistenteIAScreen(username: widget.username)));
+                    })),
                   ],
                 )
               : Wrap(
@@ -714,11 +720,15 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                     ),
                     SizedBox(
                       width: double.infinity,
-                      child: _buildSolicitudButton(context, 'Endoso/Operativo'),
+                      child: _buildSolicitudButton(context, 'Endoso/Operativo', onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => AsistenteIAScreen(username: widget.username)));
+                      }),
                     ),
                     SizedBox(
                       width: double.infinity,
-                      child: _buildSolicitudButton(context, 'Siniestro'),
+                      child: _buildSolicitudButton(context, 'Siniestro', onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => AsistenteIAScreen(username: widget.username)));
+                      }),
                     ),
                   ],
                 ),
