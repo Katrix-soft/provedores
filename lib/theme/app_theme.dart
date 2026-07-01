@@ -37,7 +37,7 @@ class AppTheme {
         outline: outline,
         outlineVariant: outlineVariant,
       ),
-      scaffoldBackgroundColor: surfaceContainerLow,
+      scaffoldBackgroundColor: Colors.white,
       
       // Typography
       textTheme: TextTheme(

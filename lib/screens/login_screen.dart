@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -29,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Logo Section
                   Image.network(
                     'https://lh3.googleusercontent.com/aida-public/AB6AXuCWmWtBTOG94ebZcQp0UsJ6-0V6LVgCiuVka12SaJiSnycaDjT4UAneUW1KkNSHjdKY2UH4QqvtgyuuGMuYWv782qq8YKsON7lzY-Lfa7EUdlDMvxPzbhmId2Jk_qwzaWf6u7UtMH6nMUSSRt0utH_nlQ2XxJONaq1dz10BEbyvSu7otZUp4ZkK1A2fZ-VFkBy-HdbRQ1wWPZTOohnN6HzD64k8QIG5wNIu8a0gnSX_oa2UfXKNAIyfNRca4wtw_RPX8T81IoCGA7Eo',
-                    height: 100,
+                    height: 60,
                     fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 16),
