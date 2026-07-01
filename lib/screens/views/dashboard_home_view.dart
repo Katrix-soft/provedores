@@ -3,7 +3,7 @@ import '../asistente_ia_screen.dart';
 import '../compania_detalle_screen.dart';
 import 'package:provider/provider.dart';
 import '../../data/providers/compania_provider.dart';
-import '../services/api_service.dart';
+import '../../data/services/api_service.dart';
 
 class DashboardHomeView extends StatefulWidget {
   final String username;
@@ -201,14 +201,14 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                     children: [
                       _buildRamosDistribution(context, ramosDist),
                       if (!isDesktop) const SizedBox(height: 24),
-                      if (!isDesktop) _buildCompaniasDistribution(context, companiasDist),
+                      if (!isDesktop) _buildCompaniasDistribution(context),
                     ],
                   ),
                 ),
                 if (isDesktop) const SizedBox(width: 16),
                 if (isDesktop)
                   Expanded(
-                    child: _buildCompaniasDistribution(context, companiasDist),
+                    child: _buildCompaniasDistribution(context),
                   ),
               ],
             ),

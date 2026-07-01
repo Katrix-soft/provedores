@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import '../../data/services/api_service.dart';
 
 class CobranzasView extends StatefulWidget {
   const CobranzasView({super.key});

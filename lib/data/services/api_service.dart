@@ -46,6 +46,21 @@ class ApiService {
     }
   }
 
+  // Recuperar contraseña enviando un link al correo
+  Future<bool> recuperarPassword(String email) async {
+    final url = Uri.parse('$baseUrl/auth/forgot-password');
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      throw Exception('Error al solicitar recuperación de contraseña: $e');
+    }
+  }
+
   // Método para crear un usuario (requiere token de Admin)
   Future<bool> crearUsuario(String usuario, String email, String password, String rol) async {
     final url = Uri.parse('$baseUrl/usuarios/');

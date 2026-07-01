@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../data/services/api_service.dart';
 
 class RecoveryScreen extends StatefulWidget {
   const RecoveryScreen({super.key});
@@ -9,20 +10,53 @@ class RecoveryScreen extends StatefulWidget {
 
 class _RecoveryScreenState extends State<RecoveryScreen> {
   bool _isLoading = false;
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _emailController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
 
   void _submitRecovery() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
-    // Simulando el retraso de red
-    await Future.delayed(const Duration(milliseconds: 1200));
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showSuccessDialog(context);
+    try {
+      final success = await apiService.recuperarPassword(_emailController.text.trim());
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        if (success) {
+          _showSuccessDialog(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Error al enviar correo. Verifica que el usuario o correo sea correcto.'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error de conexión: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 
@@ -128,92 +162,102 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
                         ),
                       ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Encabezado
-                        Text(
-                          'Recuperar Contraseña',
-                          style: theme.textTheme.titleLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Ingresa tu correo electrónico y te enviaremos las instrucciones para restablecer tu acceso.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            height: 1.5,
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Encabezado
+                          Text(
+                            'Recuperar Contraseña',
+                            style: theme.textTheme.titleLarge,
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Formulario
-                        Text(
-                          'EMAIL',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(
-                            hintText: 'ejemplo@gmail.com',
-                            prefixIcon: const Icon(Icons.mail_outline),
-                            fillColor: theme.colorScheme.surfaceContainerLow,
-                            filled: true,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Botón de Enviar
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : _submitRecovery,
-                          style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(100),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Ingresa tu correo electrónico y te enviaremos las instrucciones para restablecer tu acceso.',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              height: 1.5,
                             ),
-                            elevation: 2,
+                            textAlign: TextAlign.center,
                           ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text('Enviar Instrucciones'),
-                                    SizedBox(width: 8),
-                                    Icon(Icons.send, size: 18),
-                                  ],
-                                ),
-                        ),
+                          const SizedBox(height: 24),
 
-                        // Acción Secundaria
-                        const SizedBox(height: 24),
-                        const Divider(),
-                        const SizedBox(height: 24),
-                        Center(
-                          child: TextButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).pop();
+                          // Formulario
+                          Text(
+                            'EMAIL',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: InputDecoration(
+                              hintText: 'ejemplo@gmail.com',
+                              prefixIcon: const Icon(Icons.mail_outline),
+                              fillColor: theme.colorScheme.surfaceContainerLow,
+                              filled: true,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Por favor ingresa tu correo o usuario';
+                              }
+                              return null;
                             },
-                            icon: const Icon(Icons.arrow_back, size: 18),
-                            label: const Text('Volver al Inicio'),
-                            style: TextButton.styleFrom(
-                              foregroundColor: theme.colorScheme.primary,
-                              textStyle: theme.textTheme.labelMedium,
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Botón de Enviar
+                          ElevatedButton(
+                            onPressed: _isLoading ? null : _submitRecovery,
+                            style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text('Enviar Instrucciones'),
+                                      SizedBox(width: 8),
+                                      Icon(Icons.send, size: 18),
+                                    ],
+                                  ),
+                          ),
+
+                          // Acción Secundaria
+                          const SizedBox(height: 24),
+                          const Divider(),
+                          const SizedBox(height: 24),
+                          Center(
+                            child: TextButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              icon: const Icon(Icons.arrow_back, size: 18),
+                              label: const Text('Volver al Inicio'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: theme.colorScheme.primary,
+                                textStyle: theme.textTheme.labelMedium,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
 
