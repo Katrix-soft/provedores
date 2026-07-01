@@ -5,7 +5,10 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiService {
   static final String baseUrl = dotenv.env['API_URL'] ?? 'https://api.katrix.com.ar';
-  
+
+  // Timeout estándar para todas las peticiones
+  static const Duration _timeout = Duration(seconds: 15);
+
   // Obtiene el token guardado
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -25,19 +28,21 @@ class ApiService {
   Future<bool> login(String username, String password) async {
     final url = Uri.parse('$baseUrl/auth/login');
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'username': username, 'password': password}),
-      );
-      
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({'username': username, 'password': password}),
+          )
+          .timeout(_timeout);
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('access_token', data['access_token']);
+        await prefs.setString('access_token', data['access_token'] ?? '');
         await prefs.setString('username', data['username'] ?? username);
         await prefs.setString('role', data['role'] ?? 'agente');
-        await prefs.setInt('user_id', data['user_id'] ?? 28491);
+        await prefs.setInt('user_id', data['user_id'] ?? 0);
         return true;
       }
       return false;
@@ -46,15 +51,26 @@ class ApiService {
     }
   }
 
+  // Cierra la sesión y limpia todos los datos locales
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('access_token');
+    await prefs.remove('username');
+    await prefs.remove('role');
+    await prefs.remove('user_id');
+  }
+
   // Recuperar contraseña enviando un link al correo
   Future<bool> recuperarPassword(String email) async {
     final url = Uri.parse('$baseUrl/auth/forgot-password');
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'email': email}),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({'email': email}),
+          )
+          .timeout(_timeout);
       return response.statusCode == 200;
     } catch (e) {
       throw Exception('Error al solicitar recuperación de contraseña: $e');
@@ -66,16 +82,18 @@ class ApiService {
     final url = Uri.parse('$baseUrl/usuarios/');
     try {
       final headers = await getHeaders();
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: json.encode({
-          'usuario': usuario,
-          'email': email,
-          'password': password,
-          'rol': rol,
-        }),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: json.encode({
+              'usuario': usuario,
+              'email': email,
+              'password': password,
+              'rol': rol,
+            }),
+          )
+          .timeout(_timeout);
       return response.statusCode == 200;
     } catch (e) {
       throw Exception('Error al crear usuario: $e');
@@ -86,7 +104,7 @@ class ApiService {
   Future<dynamic> get(String endpoint) async {
     final url = Uri.parse('$baseUrl$endpoint');
     final headers = await getHeaders();
-    final response = await http.get(url, headers: headers);
+    final response = await http.get(url, headers: headers).timeout(_timeout);
     return _handleResponse(response);
   }
 
@@ -94,7 +112,9 @@ class ApiService {
   Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
     final url = Uri.parse('$baseUrl$endpoint');
     final headers = await getHeaders();
-    final response = await http.post(url, headers: headers, body: json.encode(body));
+    final response = await http
+        .post(url, headers: headers, body: json.encode(body))
+        .timeout(_timeout);
     return _handleResponse(response);
   }
 
@@ -102,7 +122,9 @@ class ApiService {
   Future<dynamic> put(String endpoint, Map<String, dynamic> body) async {
     final url = Uri.parse('$baseUrl$endpoint');
     final headers = await getHeaders();
-    final response = await http.put(url, headers: headers, body: json.encode(body));
+    final response = await http
+        .put(url, headers: headers, body: json.encode(body))
+        .timeout(_timeout);
     return _handleResponse(response);
   }
 
@@ -110,12 +132,15 @@ class ApiService {
   Future<dynamic> delete(String endpoint) async {
     final url = Uri.parse('$baseUrl$endpoint');
     final headers = await getHeaders();
-    final response = await http.delete(url, headers: headers);
+    final response = await http.delete(url, headers: headers).timeout(_timeout);
     return _handleResponse(response);
   }
 
   // Manejo de la respuesta
   dynamic _handleResponse(http.Response response) {
+    if (response.statusCode == 401) {
+      throw Exception('Sesión expirada. Por favor ingresá nuevamente.');
+    }
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isNotEmpty) {
         return json.decode(response.body);
@@ -128,4 +153,3 @@ class ApiService {
 }
 
 final apiService = ApiService();
-
