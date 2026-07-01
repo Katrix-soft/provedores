@@ -6,10 +6,12 @@ class FirmaProvider extends ChangeNotifier {
   List<List<Offset>> _strokes = [];
   String _titulo = 'Alex Rivers';
   bool _isLoaded = false;
+  int _intentos = 0;
   
   List<List<Offset>> get strokes => _strokes;
   String get titulo => _titulo;
   bool get isLoaded => _isLoaded;
+  int get intentos => _intentos;
 
   FirmaProvider() {
     _loadSettings();
@@ -19,6 +21,7 @@ class FirmaProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     
     _titulo = prefs.getString('firma_titulo') ?? 'Alex Rivers';
+    _intentos = prefs.getInt('firma_intentos') ?? 0;
     
     final strokesJson = prefs.getString('firma_strokes');
     if (strokesJson != null && strokesJson.isNotEmpty) {
@@ -56,6 +59,12 @@ class FirmaProvider extends ChangeNotifier {
   Future<void> saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('firma_titulo', _titulo);
+    
+    if (_intentos < 3) {
+      _intentos++;
+    }
+    await prefs.setInt('firma_intentos', _intentos);
+    notifyListeners();
     
     // Serialize strokes
     List<List<Map<String, double>>> jsonStrokes = _strokes.map((stroke) {

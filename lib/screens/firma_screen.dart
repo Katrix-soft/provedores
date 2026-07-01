@@ -77,7 +77,7 @@ class _FirmaScreenState extends State<FirmaScreen> {
     if (!mounted) return;
     setState(() {
       _isSaving = false;
-      // No limpiamos _tempStrokes para que la firma siga visible en el editor interactivo
+      _tempStrokes.clear(); // Limpiar el área de dibujo automáticamente
     });
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -96,14 +96,7 @@ class _FirmaScreenState extends State<FirmaScreen> {
     );
   }
 
-  void _subirImagen() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Módulo de carga de archivos abierto. Selecciona una imagen PNG o JPG con fondo transparente.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -209,47 +202,29 @@ class _FirmaScreenState extends State<FirmaScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Botones de interacción
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {}, // Ya estamos en la sección de dibujo
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: Colors.white,
-                          side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.5), width: 2),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(Icons.draw, color: theme.colorScheme.primary),
-                            const SizedBox(height: 8),
-                            Text('Dibujar Firma', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurface)),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _subirImagen,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: Colors.white,
-                          side: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(Icons.upload_file, color: theme.colorScheme.primary),
-                            const SizedBox(height: 8),
-                            Text('Subir Imagen', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurface)),
-                          ],
+                // Mensaje informativo
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: theme.colorScheme.primary, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          '⚠️ Atención: Tienes un máximo de 3 intentos en total para guardar tu firma. (Intentos usados: ${provider.intentos}/3)\nPor favor, dibuja tu firma en el recuadro que se encuentra a continuación.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
 
@@ -313,7 +288,7 @@ class _FirmaScreenState extends State<FirmaScreen> {
                 const SizedBox(height: 32),
 
                 ElevatedButton.icon(
-                  onPressed: _isSaving ? null : _guardarFirma,
+                  onPressed: (_isSaving || provider.intentos >= 3) ? null : _guardarFirma,
                   icon: _isSaving ? const SizedBox.shrink() : const Icon(Icons.save),
                   label: _isSaving
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
