@@ -63,107 +63,114 @@ class _ClientesViewState extends State<ClientesView> {
           : null,
       body: RefreshIndicator(
         onRefresh: _recargar,
-        child: SingleChildScrollView(
+        child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Search Bar
-              TextField(
-                controller: _searchController,
-                onChanged: (v) => context.read<ClienteProvider>().buscar(v),
-                decoration: InputDecoration(
-                  hintText: 'Buscar por nombre, DNI o póliza...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: Consumer<ClienteProvider>(
-                    builder: (_, p, __) => p.busqueda.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              p.buscar('');
-                            },
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Filter Chips
-              Consumer<ClienteProvider>(
-                builder: (_, provider, __) => SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildFilterChip(context, 'todos', 'Todos', provider),
-                      const SizedBox(width: 6),
-                      _buildFilterChip(context, 'vida', 'Vida', provider),
-                      const SizedBox(width: 6),
-                      _buildFilterChip(context, 'hogar', 'Hogar', provider),
-                      const SizedBox(width: 6),
-                      _buildFilterChip(context, 'automotor', 'Automotor', provider),
-                      const SizedBox(width: 6),
-                      _buildFilterChip(context, 'accidentes', 'Accidentes', provider),
-                      const SizedBox(width: 6),
-                      _buildFilterChip(context, 'empresas', 'Empresas', provider),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Contador de resultados
-              Consumer<ClienteProvider>(
-                builder: (_, provider, __) {
-                  final count = provider.clientes.length;
-                  return Row(
-                    children: [
-                      Text(
-                        '$count ${count == 1 ? "cliente" : "clientes"}',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // Search Bar
+                  TextField(
+                    controller: _searchController,
+                    onChanged: (v) => context.read<ClienteProvider>().buscar(v),
+                    decoration: InputDecoration(
+                      hintText: 'Buscar por nombre, DNI o póliza...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: Consumer<ClienteProvider>(
+                        builder: (_, p, __) => p.busqueda.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  p.buscar('');
+                                },
+                              )
+                            : const SizedBox.shrink(),
                       ),
-                      const Spacer(),
-                      if (_isLoading)
-                        const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                    ],
-                  );
-                },
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Filter Chips
+                  Consumer<ClienteProvider>(
+                    builder: (_, provider, __) => SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildFilterChip(context, 'todos', 'Todos', provider),
+                          const SizedBox(width: 6),
+                          _buildFilterChip(context, 'vida', 'Vida', provider),
+                          const SizedBox(width: 6),
+                          _buildFilterChip(context, 'hogar', 'Hogar', provider),
+                          const SizedBox(width: 6),
+                          _buildFilterChip(context, 'automotor', 'Automotor', provider),
+                          const SizedBox(width: 6),
+                          _buildFilterChip(context, 'accidentes', 'Accidentes', provider),
+                          const SizedBox(width: 6),
+                          _buildFilterChip(context, 'empresas', 'Empresas', provider),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Contador de resultados
+                  Consumer<ClienteProvider>(
+                    builder: (_, provider, __) {
+                      final count = provider.clientes.length;
+                      return Row(
+                        children: [
+                          Text(
+                            '$count ${count == 1 ? "cliente" : "clientes"}',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const Spacer(),
+                          if (_isLoading)
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                ]),
               ),
-              const SizedBox(height: 12),
+            ),
+            
+            // Client Grid/List using SliverGrid (lazy-loaded!)
+            Consumer<ClienteProvider>(
+              builder: (_, provider, __) {
+                final clientes = provider.clientes;
 
-              // Client Grid
-              Consumer<ClienteProvider>(
-                builder: (_, provider, __) {
-                  final clientes = provider.clientes;
-
-                  if (clientes.isEmpty) {
-                    return Center(
+                if (clientes.isEmpty) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 64),
                         child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.search_off, size: 64, color: theme.colorScheme.outline.withOpacity(0.4)),
                             const SizedBox(height: 16),
@@ -178,24 +185,34 @@ class _ClientesViewState extends State<ClientesView> {
                           ],
                         ),
                       ),
-                    );
-                  }
-
-                  return GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: isDesktop ? 3 : (isTablet ? 2 : 1),
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: isDesktop ? 1.3 : (isTablet ? 1.4 : 1.7),
-                    children: clientes.map((c) => _buildClientCard(context, c)).toList(),
+                    ),
                   );
-                },
-              ),
+                }
 
-              const SizedBox(height: 80),
-            ],
-          ),
+                return SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: isDesktop ? 3 : (isTablet ? 2 : 1),
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: isDesktop ? 1.3 : (isTablet ? 1.4 : 1.7),
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return _buildClientCard(context, clientes[index]);
+                      },
+                      childCount: clientes.length,
+                    ),
+                  ),
+                );
+              },
+            ),
+            
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 80),
+            ),
+          ],
         ),
       ),
     );
